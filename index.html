@@ -97,10 +97,11 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 20px;
             border-radius: 12px;
-            max-width: 400px;
+            max-width: 450px;
             pointer-events: auto;
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
+            overflow-y: auto;
+            max-height: 80vh;
         }
         
         .info-panel.visible {
@@ -156,11 +157,14 @@
         
         .data-label {
             color: rgba(255, 255, 255, 0.5);
+            flex: 0 0 40%;
         }
         
         .data-value {
             font-family: monospace;
             color: rgba(255, 255, 255, 0.9);
+            flex: 0 0 60%;
+            text-align: right;
         }
         
         .tools {
@@ -332,12 +336,16 @@
             animation: pulseStar 2s infinite ease-in-out;
         }
         
-        .search-bar {
+        .search-container {
             position: absolute;
             top: 90px;
             left: 50%;
             transform: translateX(-50%);
             width: 350px;
+            pointer-events: auto;
+        }
+        
+        .search-bar {
             background: rgba(5, 5, 5, 0.8);
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -345,7 +353,6 @@
             padding: 12px 20px;
             display: flex;
             align-items: center;
-            pointer-events: auto;
             transition: all 0.3s ease;
         }
         
@@ -376,6 +383,34 @@
         
         .search-input::placeholder {
             color: rgba(255, 255, 255, 0.4);
+        }
+
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: rgba(5, 5, 5, 0.9);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0 0 12px 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            z-index: 20;
+            transition: opacity 0.2s ease;
+        }
+        
+        .autocomplete-item {
+            padding: 10px 20px;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .autocomplete-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
         }
 
         #constellation-container {
@@ -455,7 +490,7 @@
 
         @media (max-width: 768px) {
             .title { font-size: 1.5rem; }
-            .search-bar { width: 280px; }
+            .search-container { width: 280px; }
             .info-panel { left: 20px; bottom: 20px; max-width: calc(100% - 40px); }
             .tools { right: 20px; top: 100px; }
             .tool-btn { width: 50px; height: 50px; }
@@ -482,11 +517,14 @@
             </div>
         </div>
         
-        <div class="search-bar">
-            <svg class="search-icon" viewBox="0 0 24 24">
-                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-            </svg>
-            <input type="text" class="search-input" placeholder="Search star systems...">
+        <div class="search-container">
+            <div class="search-bar">
+                <svg class="search-icon" viewBox="0 0 24 24">
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                <input type="text" class="search-input" id="search-input" placeholder="Search star systems...">
+            </div>
+            <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
         </div>
         
         <div class="tools">
@@ -526,34 +564,19 @@
         <div class="info-panel" id="info-panel">
             <h3 class="info-title">Select a System<button class="collapse-btn" id="collapse-btn">−</button></h3>
             <div class="info-data" id="info-data">
-                <div class="data-item">
-                    <span class="data-label">Type:</span>
-                    <span class="data-value">-</span>
-                </div>
-                <div class="data-item">
-                    <span class="data-label">Distance:</span>
-                    <span class="data-value">-</span>
-                </div>
-                <div class="data-item">
-                    <span class="data-label">Mass:</span>
-                    <span class="data-value">-</span>
-                </div>
-                <div class="data-item">
-                    <span class="data-label">Temperature:</span>
-                    <span class="data-value">-</span>
-                </div>
-                <div class="data-item">
-                    <span class="data-label">Luminosity:</span>
-                    <span class="data-value">-</span>
-                </div>
-                <div class="data-item">
-                    <span class="data-label">Age:</span>
-                    <span class="data-value">-</span>
-                </div>
-                <div class="data-item">
-                    <span class="data-label">Planets:</span>
-                    <span class="data-value">-</span>
-                </div>
+                <div class="data-item"><span class="data-label">Type:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Distance:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Mass:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Radius:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Temperature:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Luminosity:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Spectral Class:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Rotation Period:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Surface Gravity:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Metallicity:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Age:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Planets:</span><span class="data-value">-</span></div>
+                <div class="data-item"><span class="data-label">Constellation:</span><span class="data-value">-</span></div>
             </div>
         </div>
     </div>
@@ -569,22 +592,86 @@
 
     <script>
         const starData = [
-            { name: "Sirius", type: "Binary Star System", distance: "8.6 light-years", mass: "2.02 Solar masses", temperature: "9,940 K", luminosity: "25.4 Solar luminosities", age: "~230 million years", planets: "Unconfirmed", color: "#a3d8ff", size: 1.2, position: { x: 0, y: 0, z: 0 } },
-            { name: "Alpha Centauri", type: "Triple Star System", distance: "4.37 light-years", mass: "1.1 Solar masses (A), 0.9 Solar masses (B)", temperature: "5,790 K (A), 5,260 K (B)", luminosity: "1.519 Solar luminosities (A), 0.5 Solar luminosities (B)", age: "~6 billion years", planets: "1 confirmed (Proxima Centauri b)", color: "#fff5db", size: 1.0, position: { x: -10, y: 5, z: -8 } },
-            { name: "Betelgeuse", type: "Red Supergiant", distance: "548 light-years", mass: "11-12 Solar masses", temperature: "3,500 K", luminosity: "126,000 Solar luminosities", age: "~8 million years", planets: "None detected", color: "#ff6a4d", size: 4.2, position: { x: 20, y: -15, z: 12 } },
-            { name: "Vega", type: "Main Sequence Star", distance: "25 light-years", mass: "2.1 Solar masses", temperature: "9,602 K", luminosity: "40 Solar luminosities", age: "~455 million years", planets: "Debris disk detected", color: "#d8f6ff", size: 1.4, position: { x: -16, y: -10, z: -20 } },
-            { name: "Antares", type: "Red Supergiant", distance: "550 light-years", mass: "11-14.3 Solar masses", temperature: "3,400 K", luminosity: "75,900 Solar luminosities", age: "~15 million years", planets: "None detected", color: "#ff4d29", size: 3.8, position: { x: 28, y: 8, z: -16 } },
-            { name: "Polaris", type: "Multiple Star System", distance: "433 light-years", mass: "5.4 Solar masses", temperature: "6,015 K", luminosity: "2,500 Solar luminosities", age: "~70 million years", planets: "None detected", color: "#fffae6", size: 1.6, position: { x: -24, y: 20, z: 24 } },
-            { name: "Rigel", type: "Blue Supergiant", distance: "860 light-years", mass: "21 Solar masses", temperature: "12,100 K", luminosity: "120,000 Solar luminosities", age: "~8 million years", planets: "None detected", color: "#a3e6ff", size: 2.6, position: { x: 32, y: -20, z: 32 } },
-            { name: "Aldebaran", type: "Orange Giant", distance: "65 light-years", mass: "1.7 Solar masses", temperature: "3,900 K", luminosity: "425 Solar luminosities", age: "~6.4 billion years", planets: "1 confirmed (Aldebaran b)", color: "#ffb366", size: 2.2, position: { x: -8, y: 28, z: -28 } },
-            { name: "Tau Ceti", type: "Main Sequence Star", distance: "11.9 light-years", mass: "0.783 Solar masses", temperature: "5,344 K", luminosity: "0.52 Solar luminosities", age: "~5.8 billion years", planets: "4 confirmed", color: "#fff7cc", size: 0.8, position: { x: 16, y: 16, z: 8 } },
-            { name: "Deneb", type: "Blue-White Supergiant", distance: "2,600 light-years", mass: "19 Solar masses", temperature: "8,525 K", luminosity: "196,000 Solar luminosities", age: "~10 million years", planets: "None detected", color: "#d6f9ff", size: 3.0, position: { x: -36, y: -28, z: 16 } },
-            { name: "Fomalhaut", type: "Main Sequence Star", distance: "25 light-years", mass: "1.92 Solar masses", temperature: "8,590 K", luminosity: "16.6 Solar luminosities", age: "~440 million years", planets: "1 confirmed (Fomalhaut b)", color: "#cdf4ff", size: 1.2, position: { x: 20, y: 24, z: -24 } },
-            { name: "Epsilon Eridani", type: "Main Sequence Star", distance: "10.5 light-years", mass: "0.82 Solar masses", temperature: "5,084 K", luminosity: "0.34 Solar luminosities", age: "~600 million years", planets: "1 confirmed (Epsilon Eridani b)", color: "#ffe0a3", size: 0.6, position: { x: -20, y: -32, z: -12 } }
-        ];
-
-        const constellationData = [
-            [0, 3], [3, 5], [5, 9], [9, 6], [6, 2], [2, 4], [4, 7], [7, 10], [10, 8], [8, 1], [1, 0], [11, 8], [11, 10]
+            { 
+                name: "Sirius", 
+                type: "Binary Star System", 
+                distance: "8.6 light-years", 
+                mass: "2.02 Solar masses", 
+                radius: "1.71 Solar radii", 
+                temperature: "9,940 K", 
+                luminosity: "25.4 Solar luminosities", 
+                spectralClass: "A1V + DA2", 
+                rotationPeriod: "Unknown", 
+                surfaceGravity: "4.33 log(g)", 
+                metallicity: "0.5 [Fe/H]", 
+                age: "~230 million years", 
+                planets: "Unconfirmed", 
+                constellation: "Canis Major", 
+                color: "#a3d8ff", 
+                size: 1.2, 
+                position: { x: 0, y: 0, z: 0 },
+                components: [
+                    { type: "Star", name: "Sirius A", mass: "2.02 Solar masses", radius: "1.71 Solar radii", color: "#a3d8ff", size: 1.2, orbit: 0 },
+                    { type: "White Dwarf", name: "Sirius B", mass: "0.98 Solar masses", radius: "0.008 Solar radii", color: "#ffffff", size: 0.1, orbit: 50, period: 50 } // 50 years
+                ]
+            },
+            { 
+                name: "Solar System", 
+                type: "Planetary System", 
+                distance: "0 light-years", 
+                mass: "1 Solar mass", 
+                radius: "1 Solar radius", 
+                temperature: "5,778 K", 
+                luminosity: "1 Solar luminosity", 
+                spectralClass: "G2V", 
+                rotationPeriod: "25.38 days", 
+                surfaceGravity: "4.44 log(g)", 
+                metallicity: "0.02 [Fe/H]", 
+                age: "~4.6 billion years", 
+                planets: "8 confirmed", 
+                constellation: "N/A", 
+                color: "#fff5db", 
+                size: 1.0, 
+                position: { x: 0, y: 0, z: 0 },
+                components: [
+                    { type: "Star", name: "Sun", mass: "1 Solar mass", radius: "1 Solar radius", color: "#fff5db", size: 1.0, orbit: 0 },
+                    { type: "Planet", name: "Mercury", mass: "0.055 Earth masses", radius: "0.38 Earth radii", color: "#a8a8a8", size: 0.05, orbit: 10, period: 0.24 }, // 88 days
+                    { type: "Planet", name: "Venus", mass: "0.815 Earth masses", radius: "0.95 Earth radii", color: "#e6d690", size: 0.08, orbit: 15, period: 0.62 }, // 225 days
+                    { type: "Planet", name: "Earth", mass: "1 Earth mass", radius: "1 Earth radius", color: "#1e90ff", size: 0.1, orbit: 20, period: 1 }, // 365 days
+                    { type: "Planet", name: "Mars", mass: "0.107 Earth masses", radius: "0.53 Earth radii", color: "#ff4500", size: 0.07, orbit: 25, period: 1.88 }, // 687 days
+                    { type: "Planet", name: "Jupiter", mass: "317.8 Earth masses", radius: "11.2 Earth radii", color: "#ffa500", size: 0.3, orbit: 40, period: 11.86 }, // 4333 days
+                    { type: "Planet", name: "Saturn", mass: "95.2 Earth masses", radius: "9.45 Earth radii", color: "#d4a017", size: 0.25, orbit: 60, period: 29.46 }, // 10759 days
+                    { type: "Planet", name: "Uranus", mass: "14.5 Earth masses", radius: "4.0 Earth radii", color: "#87ceeb", size: 0.15, orbit: 80, period: 84 }, // 30687 days
+                    { type: "Planet", name: "Neptune", mass: "17.1 Earth masses", radius: "3.88 Earth radii", color: "#4169e1", size: 0.15, orbit: 100, period: 164.8 }, // 60190 days
+                    { type: "Asteroid", name: "Ceres", mass: "0.00016 Earth masses", radius: "0.074 Earth radii", color: "#808080", size: 0.02, orbit: 30, period: 4.6 }, // 1680 days
+                    { type: "Asteroid", name: "Vesta", mass: "0.00004 Earth masses", radius: "0.041 Earth radii", color: "#a9a9a9", size: 0.015, orbit: 35, period: 3.63 } // 1325 days
+                ]
+            },
+            { 
+                name: "Alpha Centauri", 
+                type: "Triple Star System", 
+                distance: "4.37 light-years", 
+                mass: "1.1 Solar masses (A), 0.9 Solar masses (B), 0.12 Solar masses (C)", 
+                radius: "1.22 Solar radii (A), 0.86 Solar radii (B)", 
+                temperature: "5,790 K (A), 5,260 K (B)", 
+                luminosity: "1.519 Solar luminosities (A), 0.5 Solar luminosities (B)", 
+                spectralClass: "G2V + K1V + M5.5Ve", 
+                rotationPeriod: "22 days (A), 41 days (B)", 
+                surfaceGravity: "4.37 log(g) (A), 4.47 log(g) (B)", 
+                metallicity: "0.2 [Fe/H]", 
+                age: "~6 billion years", 
+                planets: "1 confirmed (Proxima Centauri b)", 
+                constellation: "Centaurus", 
+                color: "#fff5db", 
+                size: 1.0, 
+                position: { x: -10, y: 5, z: -8 },
+                components: [
+                    { type: "Star", name: "Alpha Centauri A", mass: "1.1 Solar masses", radius: "1.22 Solar radii", color: "#fff5db", size: 1.0, orbit: 0 },
+                    { type: "Star", name: "Alpha Centauri B", mass: "0.9 Solar masses", radius: "0.86 Solar radii", color: "#ffcc99", size: 0.8, orbit: 20, period: 79.91 }, // 79.91 years
+                    { type: "Star", name: "Proxima Centauri", mass: "0.12 Solar masses", radius: "0.14 Solar radii", color: "#ff4040", size: 0.2, orbit: 100, period: 550000 }, // ~550,000 years
+                    { type: "Planet", name: "Proxima Centauri b", mass: "1.17 Earth masses", radius: "1.1 Earth radii", color: "#87ceeb", size: 0.05, orbit: 5, period: 0.03 } // 11.2 days
+                ]
+            }
         ];
 
         const canvas = document.getElementById('canvas');
@@ -594,6 +681,8 @@
         const constellationContainer = document.getElementById('constellation-container');
         const loadingOverlay = document.getElementById('loading-overlay');
         const progressBar = document.getElementById('progress-bar');
+        const searchInput = document.getElementById('search-input');
+        const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
 
         let width = window.innerWidth;
         let height = window.innerHeight;
@@ -604,7 +693,7 @@
         let constellationSvg = constellationContainer.querySelector('svg');
 
         let cameraZ = 50;
-        const perspective = 1000;
+        const perspective = 2000;
         let rotationX = 0;
         let rotationY = 0;
         let targetRotationX = 0;
@@ -612,9 +701,9 @@
         let isDragging = false;
         let lastMouseX = 0;
         let lastMouseY = 0;
-        let stars = [];
+        let currentSystem = null;
+        let showDetails = false;
         let bgStars = [];
-        let selectedStar = null;
         let showConstellations = true;
         let showInfo = true;
         let isInfoCollapsed = false;
@@ -640,8 +729,7 @@
                 `;
                 starCard.appendChild(preview);
                 starCard.addEventListener('click', () => {
-                    addStar(index);
-                    selectStar(stars.length - 1);
+                    selectSystem(index);
                     closeCatalog();
                 });
                 starGrid.appendChild(starCard);
@@ -661,10 +749,17 @@
             }
         }
 
-        function addStar(index) {
-            if (!stars.some(s => s.name === starData[index].name)) {
-                stars.push({ ...starData[index], projectedX: 0, projectedY: 0, projectedSize: 0 });
-            }
+        function selectSystem(index) {
+            currentSystem = { ...starData[index], projectedX: 0, projectedY: 0, projectedSize: 0 };
+            currentSystem.components = starData[index].components.map(comp => ({
+                ...comp,
+                projectedX: 0,
+                projectedY: 0,
+                projectedSize: 0,
+                angle: Math.random() * Math.PI * 2 // Random starting angle for orbit
+            }));
+            showDetails = false;
+            updateInfoPanel();
         }
 
         function project(x, y, z) {
@@ -674,9 +769,10 @@
             return { x: projectedX, y: projectedY, scale };
         }
 
-        function drawStars() {
+        function drawSystem() {
             ctx.clearRect(0, 0, width, height);
 
+            // Draw background stars
             bgStars.forEach(star => {
                 const rotatedX = star.x * Math.cos(rotationY) - star.z * Math.sin(rotationY);
                 const rotatedZ = star.x * Math.sin(rotationY) + star.z * Math.cos(rotationY);
@@ -693,85 +789,108 @@
                 }
             });
 
-            stars.forEach((star, index) => {
-                const rotatedX = star.position.x * Math.cos(rotationY) - star.position.z * Math.sin(rotationY);
-                const rotatedZ = star.position.x * Math.sin(rotationY) + star.position.z * Math.cos(rotationY);
-                const rotatedY = star.position.y * Math.cos(rotationX) + rotatedZ * Math.sin(rotationX);
-                const finalZ = -star.position.y * Math.sin(rotationX) + rotatedZ * Math.cos(rotationX);
-                const projected = project(rotatedX, rotatedY, finalZ);
-                if (projected.scale > 0) {
-                    star.projectedX = projected.x;
-                    star.projectedY = projected.y;
-                    star.projectedSize = Math.max(star.size * 20 * projected.scale, 2);
+            if (!currentSystem) return;
 
-                    // Enhanced glow effect
-                    const gradient = ctx.createRadialGradient(projected.x, projected.y, 0, projected.x, projected.y, star.projectedSize * 6);
-                    gradient.addColorStop(0, star.color);
-                    gradient.addColorStop(0.1, star.color + 'cc');
-                    gradient.addColorStop(0.5, star.color + '66');
+            // Draw the star system
+            const rotatedX = currentSystem.position.x * Math.cos(rotationY) - currentSystem.position.z * Math.sin(rotationY);
+            const rotatedZ = currentSystem.position.x * Math.sin(rotationY) + currentSystem.position.z * Math.cos(rotationY);
+            const rotatedY = currentSystem.position.y * Math.cos(rotationX) + rotatedZ * Math.sin(rotationX);
+            const finalZ = -currentSystem.position.y * Math.sin(rotationX) + rotatedZ * Math.cos(rotationX);
+            const projected = project(rotatedX, rotatedY, finalZ);
+
+            if (projected.scale > 0) {
+                currentSystem.projectedX = projected.x;
+                currentSystem.projectedY = projected.y;
+                currentSystem.projectedSize = Math.max(currentSystem.size * 20 * projected.scale, 2);
+
+                if (!showDetails) {
+                    // Simple view: just the star
+                    const gradient = ctx.createRadialGradient(projected.x, projected.y, 0, projected.x, projected.y, currentSystem.projectedSize * 6);
+                    gradient.addColorStop(0, currentSystem.color);
+                    gradient.addColorStop(0.1, currentSystem.color + 'cc');
+                    gradient.addColorStop(0.5, currentSystem.color + '66');
                     gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
                     ctx.fillStyle = gradient;
                     ctx.beginPath();
-                    ctx.arc(projected.x, projected.y, star.projectedSize * 6, 0, Math.PI * 2);
+                    ctx.arc(projected.x, projected.y, currentSystem.projectedSize * 6, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Pulsing star
-                    ctx.fillStyle = star.color;
+                    ctx.fillStyle = currentSystem.color;
                     ctx.beginPath();
-                    ctx.arc(projected.x, projected.y, star.projectedSize * (1 + Math.sin(Date.now() / 500) * 0.1), 0, Math.PI * 2);
+                    ctx.arc(projected.x, projected.y, currentSystem.projectedSize * (1 + Math.sin(Date.now() / 500) * 0.1), 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Highlight
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                     ctx.beginPath();
-                    ctx.arc(projected.x - star.projectedSize * 0.3, projected.y - star.projectedSize * 0.3, star.projectedSize * 0.2, 0, Math.PI * 2);
+                    ctx.arc(projected.x - currentSystem.projectedSize * 0.3, projected.y - currentSystem.projectedSize * 0.3, currentSystem.projectedSize * 0.2, 0, Math.PI * 2);
                     ctx.fill();
+                } else {
+                    // Detailed view: show all components
+                    currentSystem.components.forEach((comp, index) => {
+                        const time = Date.now() / 1000;
+                        comp.angle += (2 * Math.PI) / (comp.period * 60); // Orbit speed based on period (in years)
+                        const orbitX = Math.cos(comp.angle) * comp.orbit;
+                        const orbitY = Math.sin(comp.angle) * comp.orbit;
+                        const compRotatedX = rotatedX + orbitX;
+                        const compRotatedY = rotatedY + orbitY;
+                        const compProjected = project(compRotatedX, compRotatedY, finalZ);
 
-                    if (selectedStar === index) {
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-                        ctx.lineWidth = 2;
-                        ctx.setLineDash([8, 8]);
-                        ctx.beginPath();
-                        ctx.arc(projected.x, projected.y, star.projectedSize * 3, 0, Math.PI * 2);
-                        ctx.stroke();
-                        ctx.setLineDash([]);
-                    }
-                }
-            });
-            updateConstellations();
-        }
+                        if (compProjected.scale > 0) {
+                            comp.projectedX = compProjected.x;
+                            comp.projectedY = compProjected.y;
+                            comp.projectedSize = Math.max(comp.size * 20 * compProjected.scale, 1);
 
-        function updateConstellations() {
-            constellationSvg.innerHTML = '';
-            if (showConstellations && stars.length > 1) {
-                constellationData.forEach(connection => {
-                    const star1Index = stars.findIndex(s => s.name === starData[connection[0]].name);
-                    const star2Index = stars.findIndex(s => s.name === starData[connection[1]].name);
-                    if (star1Index !== -1 && star2Index !== -1) {
-                        const star1 = stars[star1Index];
-                        const star2 = stars[star2Index];
-                        if (star1.projectedSize > 0 && star2.projectedSize > 0) {
-                            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                            line.setAttribute('class', 'constellation-line');
-                            line.setAttribute('d', `M${star1.projectedX},${star1.projectedY} L${star2.projectedX},${star2.projectedY}`);
-                            constellationSvg.appendChild(line);
+                            // Draw orbital path
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.arc(projected.x, projected.y, comp.orbit * compProjected.scale, 0, Math.PI * 2);
+                            ctx.stroke();
+
+                            // Draw component
+                            const gradient = ctx.createRadialGradient(compProjected.x, compProjected.y, 0, compProjected.x, compProjected.y, comp.projectedSize * 4);
+                            gradient.addColorStop(0, comp.color);
+                            gradient.addColorStop(0.1, comp.color + 'cc');
+                            gradient.addColorStop(0.5, comp.color + '66');
+                            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                            ctx.fillStyle = gradient;
+                            ctx.beginPath();
+                            ctx.arc(compProjected.x, compProjected.y, comp.projectedSize * 4, 0, Math.PI * 2);
+                            ctx.fill();
+
+                            ctx.fillStyle = comp.color;
+                            ctx.beginPath();
+                            ctx.arc(compProjected.x, compProjected.y, comp.projectedSize, 0, Math.PI * 2);
+                            ctx.fill();
+
+                            if (comp.type === "Star") {
+                                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                                ctx.beginPath();
+                                ctx.arc(compProjected.x - comp.projectedSize * 0.3, compProjected.y - comp.projectedSize * 0.3, comp.projectedSize * 0.2, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
         }
 
         function updateInfoPanel() {
-            if (selectedStar !== null && showInfo && stars[selectedStar]) {
-                const star = stars[selectedStar];
-                infoPanel.querySelector('.info-title').childNodes[0].textContent = star.name + ' System';
-                infoPanel.querySelectorAll('.data-value')[0].textContent = star.type;
-                infoPanel.querySelectorAll('.data-value')[1].textContent = star.distance;
-                infoPanel.querySelectorAll('.data-value')[2].textContent = star.mass;
-                infoPanel.querySelectorAll('.data-value')[3].textContent = star.temperature;
-                infoPanel.querySelectorAll('.data-value')[4].textContent = star.luminosity;
-                infoPanel.querySelectorAll('.data-value')[5].textContent = star.age;
-                infoPanel.querySelectorAll('.data-value')[6].textContent = star.planets;
+            if (currentSystem && showInfo) {
+                infoPanel.querySelector('.info-title').childNodes[0].textContent = currentSystem.name + ' System';
+                infoPanel.querySelectorAll('.data-value')[0].textContent = currentSystem.type;
+                infoPanel.querySelectorAll('.data-value')[1].textContent = currentSystem.distance;
+                infoPanel.querySelectorAll('.data-value')[2].textContent = currentSystem.mass;
+                infoPanel.querySelectorAll('.data-value')[3].textContent = currentSystem.radius;
+                infoPanel.querySelectorAll('.data-value')[4].textContent = currentSystem.temperature;
+                infoPanel.querySelectorAll('.data-value')[5].textContent = currentSystem.luminosity;
+                infoPanel.querySelectorAll('.data-value')[6].textContent = currentSystem.spectralClass;
+                infoPanel.querySelectorAll('.data-value')[7].textContent = currentSystem.rotationPeriod;
+                infoPanel.querySelectorAll('.data-value')[8].textContent = currentSystem.surfaceGravity;
+                infoPanel.querySelectorAll('.data-value')[9].textContent = currentSystem.metallicity;
+                infoPanel.querySelectorAll('.data-value')[10].textContent = currentSystem.age;
+                infoPanel.querySelectorAll('.data-value')[11].textContent = currentSystem.planets;
+                infoPanel.querySelectorAll('.data-value')[12].textContent = currentSystem.constellation;
                 infoPanel.classList.add('visible');
             } else {
                 infoPanel.classList.remove('visible');
@@ -783,19 +902,6 @@
             } else {
                 infoPanel.classList.remove('collapsed');
                 infoData.classList.remove('hidden');
-            }
-        }
-
-        function selectStar(index) {
-            selectedStar = index;
-            updateInfoPanel();
-            if (stars[index]) {
-                const star = stars[index];
-                const targetX = -star.position.x;
-                const targetY = -star.position.y;
-                const targetZ = -star.position.z;
-                targetRotationY = Math.atan2(targetX, targetZ);
-                targetRotationX = Math.atan2(targetY, Math.sqrt(targetX * targetX + targetZ * targetZ));
             }
         }
 
@@ -811,7 +917,7 @@
         function animate() {
             rotationX += (targetRotationX - rotationX) * 0.05;
             rotationY += (targetRotationY - rotationY) * 0.05;
-            drawStars();
+            drawSystem();
             requestAnimationFrame(animate);
         }
 
@@ -826,13 +932,39 @@
         function takeScreenshot() {
             const uiContainer = document.querySelector('.ui-container');
             uiContainer.style.display = 'none';
-            drawStars();
+            drawSystem();
             const dataUrl = canvas.toDataURL('image/png');
             const link = document.createElement('a');
             link.href = dataUrl;
             link.download = 'cosmic-void-explorer.png';
             link.click();
             uiContainer.style.display = 'flex';
+        }
+
+        function showAutocomplete(query) {
+            autocompleteDropdown.innerHTML = '';
+            if (query.length === 0) {
+                autocompleteDropdown.style.display = 'none';
+                return;
+            }
+            const suggestions = starData.filter(star => star.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
+            if (suggestions.length > 0) {
+                suggestions.forEach(star => {
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    item.textContent = star.name;
+                    item.addEventListener('click', () => {
+                        const index = starData.findIndex(s => s.name === star.name);
+                        selectSystem(index);
+                        searchInput.value = star.name;
+                        autocompleteDropdown.style.display = 'none';
+                    });
+                    autocompleteDropdown.appendChild(item);
+                });
+                autocompleteDropdown.style.display = 'block';
+            } else {
+                autocompleteDropdown.style.display = 'none';
+            }
         }
 
         function init() {
@@ -849,6 +981,7 @@
 
             createBackgroundStars();
             populateCatalog();
+            selectSystem(0); // Start with Sirius
             animate();
 
             canvas.addEventListener('mousedown', e => {
@@ -873,27 +1006,14 @@
 
             canvas.addEventListener('wheel', e => {
                 e.preventDefault();
-                cameraZ += e.deltaY * 0.2;
-                cameraZ = Math.max(10, Math.min(cameraZ, 100));
+                cameraZ += e.deltaY * 5;
+                cameraZ = Math.max(0.1, Math.min(cameraZ, 5000));
             });
 
-            canvas.addEventListener('click', e => {
-                if (isDragging) return;
-                let closestStar = null;
-                let closestDistance = Infinity;
-                stars.forEach((star, index) => {
-                    if (star.projectedSize > 0) {
-                        const distance = Math.sqrt(
-                            Math.pow(e.clientX - star.projectedX, 2) +
-                            Math.pow(e.clientY - star.projectedY, 2)
-                        );
-                        if (distance < star.projectedSize * 5 && distance < closestDistance) {
-                            closestDistance = distance;
-                            closestStar = index;
-                        }
-                    }
-                });
-                if (closestStar !== null) selectStar(closestStar);
+            canvas.addEventListener('dblclick', e => {
+                if (currentSystem) {
+                    showDetails = !showDetails;
+                }
             });
 
             document.getElementById('catalog-btn').addEventListener('click', openCatalog);
@@ -902,14 +1022,15 @@
                 targetRotationX = 0;
                 targetRotationY = 0;
                 cameraZ = 50;
+                showDetails = false;
             });
             document.getElementById('zoom-in').addEventListener('click', () => {
-                cameraZ -= 10;
-                cameraZ = Math.max(10, Math.min(cameraZ, 100));
+                cameraZ -= 200;
+                cameraZ = Math.max(0.1, Math.min(cameraZ, 5000));
             });
             document.getElementById('zoom-out').addEventListener('click', () => {
-                cameraZ += 10;
-                cameraZ = Math.max(10, Math.min(cameraZ, 100));
+                cameraZ += 200;
+                cameraZ = Math.max(0.1, Math.min(cameraZ, 5000));
             });
             document.getElementById('toggle-constellations').addEventListener('click', () => showConstellations = !showConstellations);
             document.getElementById('toggle-info').addEventListener('click', () => {
@@ -917,22 +1038,22 @@
                 updateInfoPanel();
             });
             document.getElementById('screenshot').addEventListener('click', takeScreenshot);
-
             document.getElementById('collapse-btn').addEventListener('click', () => {
                 isInfoCollapsed = !isInfoCollapsed;
                 document.getElementById('collapse-btn').textContent = isInfoCollapsed ? '+' : '−';
                 updateInfoPanel();
             });
 
-            document.querySelector('.search-input').addEventListener('input', e => {
-                const query = e.target.value.toLowerCase();
-                if (query.length > 0) {
-                    const matchingStarIndex = starData.findIndex(star => star.name.toLowerCase().includes(query));
-                    if (matchingStarIndex !== -1) {
-                        addStar(matchingStarIndex);
-                        selectStar(stars.length - 1);
-                    }
-                }
+            searchInput.addEventListener('input', e => {
+                showAutocomplete(e.target.value);
+            });
+
+            searchInput.addEventListener('focus', () => {
+                showAutocomplete(searchInput.value);
+            });
+
+            searchInput.addEventListener('blur', () => {
+                setTimeout(() => autocompleteDropdown.style.display = 'none', 200);
             });
         }
 
